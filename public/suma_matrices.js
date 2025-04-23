@@ -1,13 +1,13 @@
-function generarMatrices(){
-    let filas = document.getElementById("filas").value;
-    let columnas = document.getElementById("columnas").value;
+let matriz1, matriz2;
+
+async function generarMatrices(){
+    let filas = parseInt(document.getElementById("filas").value);
+    let columnas = parseInt(document.getElementById("columnas").value);
     let matricesDiv = document.getElementById("matrices");
     matricesDiv.innerHTML = '';
 
-    if (filas <= 0 || columnas <= 0){
-        alert("Ingrese valores válidos para filas y columnas");
-        return;
-    }
+    matriz1 = tf.randomUniform([filas, columnas], 1, 21, 'int32');
+    matriz2 = tf.randomUniform([filas, columnas], 1, 21, 'int32');
     
     for (let i = 1; i <= 2; i++){
         let matrizDiv = document.createElement("div");
@@ -20,34 +20,52 @@ function generarMatrices(){
                 let input = document.createElement('input');
                 input.type='number';
                 input.className=`matriz${i}`;
+                input.disabled = true;
                 matrizDiv.appendChild(input);
             }
         }
         matricesDiv.appendChild(matrizDiv);
     }
+
+    const datos1 = await matriz1.array();
+    const datos2 = await matriz2.array();
+
+    let inputs1 = document.querySelectorAll('.matriz1');
+    let inputs2 = document.querySelectorAll('.matriz2');
+
+    let index= 0;
+    datos1.forEach(fila => fila.forEach(valor => {
+        inputs1[index].value = valor;
+        index++;
+    }));
+
+    index = 0;
+    datos2.forEach(fila => fila.forEach(valor =>{
+        inputs2[index].value = valor;
+        index++;
+    }));
 }
 
+
 function sumarMatrices(){
-    let matriz1 = Array.from(document.querySelectorAll('.matriz1')).map(input => Number(input.value));
-    let matriz2 = Array.from(document.querySelectorAll('.matriz2')).map(input => Number(input.value));
-
-    if (matriz1.some(isNaN) || matriz2.some(isNaN)){
-        alert("Ingrese solo valores númericos");
+    if(!matriz1 || !matriz2) {
+        alert("Genera las matrices primero.");
         return;
     }
 
-    if (matriz1.length !== matriz2.length){
-        alert("Las matrices deben tener el mismo orden");
-        return;
-    }
-
+    let resultado = tf.add(matriz1, matriz2);
     let resultadoDiv = document.getElementById('resultado');
     resultadoDiv.innerHTML = '';
-    resultadoDiv.style.gridTemplateColumns = document.querySelector('.matriz').style.gridTemplateColumns;
+    resultadoDiv.style.display = "grid";
+    resultadoDiv.style.gridTemplateColumns = `repeat(${matriz1.shape[1]}, auto)`;
 
-    for(let i = 0; i < matriz1.length; i++){
-        let cell = document.createElement('div-matriz');
-        cell.textContent = matriz1[i] + matriz2[i];
-        resultadoDiv.appendChild(cell);
-    }
+    resultado.array().then(data =>{
+        data.forEach(fila =>{
+            fila.forEach(valor => {
+                let cell = document.createElement('div');
+                cell.textContent = valor;
+                resultadoDiv.appendChild(cell);
+            });
+        });
+    });
 }
